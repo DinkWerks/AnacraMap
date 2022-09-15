@@ -1,0 +1,31 @@
+<head>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+
+    <script src="https://unpkg.com/three"></script>
+
+    <script src="https://unpkg.com/globe.gl"></script>
+    <!--<script src="../../dist/globe.gl.js"></script>-->
+</head>
+
+<body>
+    <div id="globeViz"></div>
+
+    <script>
+        fetch('Continents.geojson')
+            .then(res => res.json())
+            .then(continents => {
+                const world = Globe()
+                    .polygonsData(continents.features)
+                    .globeImageUrl('unpkg.com/three-globe/example/img/earth-dark.jpg')
+                    .pointOfView({ altitude: 3 }, 5000)
+                    .polygonCapColor(feat => 'rgba(200, 0, 0, 0.6)')
+                    .polygonSideColor(() => 'rgba(0, 100, 0, 0.05)');
+                
+                (document.getElementById('globeViz'))
+            });
+    </script>
+</body>
