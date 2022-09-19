@@ -5,27 +5,90 @@
         }
     </style>
 
-    <script src="https://unpkg.com/three"></script>
+    <script src="//unpkg.com/d3"></script>
 
-    <script src="https://unpkg.com/globe.gl"></script>
-    <!--<script src="../../dist/globe.gl.js"></script>-->
+    <script src="//unpkg.com/three"></script>
+
+    <script src="//unpkg.com/globe.gl"></script>
 </head>
 
 <body>
     <div id="globeViz"></div>
 
     <script>
-        fetch('Continents.geojson')
+        const N = 30;
+        const gData = [...Array(N).keys()].map(() => ({
+            coords: {
+                lat: (Math.random() - 0.5) * 180,
+                lng: (Math.random() - 0.5) * 360,
+            },
+            size: Math.random() / 3,
+            color: ['red', 'white', 'blue', 'green'][Math.round(Math.random() * 3)]
+        }));
+
+        const world = Globe()
+            (document.getElementById('globeViz'))
+            .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+            .showAtmosphere(true);
+
+        const gm = world.globeMaterial();
+
+        gm.color = new THREE.Color('rgb(20, 10, 120)');
+        new THREE.TextureLoader().load('./depth.jpg', texture => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(4, 4);
+            gm.bumpMap = texture;
+            gm.bumpScale = 0.5
+            gm.specularMap = texture;
+            gm.specular = new THREE.Color('rgb(200, 245, 241)');
+            gm.shininess = 11;
+        });
+
+
+        fetch('./Continents.geojson')
             .then(res => res.json())
-            .then(continents => {
-                const world = Globe()
-                    .polygonsData(continents.features)
-                    .globeImageUrl('unpkg.com/three-globe/example/img/earth-dark.jpg')
-                    .pointOfView({ altitude: 3 }, 5000)
-                    .polygonCapColor(feat => 'rgba(200, 0, 0, 0.6)')
-                    .polygonSideColor(() => 'rgba(0, 100, 0, 0.05)');
-                
-                (document.getElementById('globeViz'))
+            .then(geodata => {
+                console.log("Continents Loaded");
+                world
+                    .polygonsData(geodata.features)
+                    .polygonCapColor(() => 'rgb(196, 182, 141)')
+                    .polygonSideColor(() => 'black')
+                    .polygonStrokeColor(() => '#111');
+
+
+
+                new THREE.TextureLoader().load('./land.jpg', texture => {
+                    const capMaterial = new THREE.MeshPhongMaterial();
+
+                    capMaterial.color = new THREE.Color("rgb(5,100,5)");
+                    capMaterial.specular = new THREE.Color("rgb(240,17,248)"),
+                        capMaterial.shininess = 5;
+
+                    texture.wrapS = THREE.RepeatWrapping;
+                    texture.wrapT = THREE.RepeatWrapping;
+                    texture.repeat.set(4, 4);
+                    capMaterial.bumpMap = texture;
+                    capMaterial.bumpScale = 0.25;
+
+                    world.polygonCapMaterial(capMaterial);
+                });
+
             });
+
+        fetch('./PointsOfInterest.geojson')
+            .then(res => res.json())
+            .then(poi => {
+                console.log("POI Loaded");
+                world
+                    .labelsData(poi.features)
+                    .labelLat(d => d.geometry.coordinates[1])
+                    .labelLng(d => d.geometry.coordinates[0])
+                    .labelText(d => `${d.properties.Name}`)
+                    .labelColor(() => 'rgb(210,190,190)')
+                    .labelSize(1.25)
+                    .labelDotRadius(0)
+                    .labelAltitude(0.02);
+            })
     </script>
 </body>
